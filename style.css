@@ -47,6 +47,23 @@ body {
     opacity: 0.15;
     z-index: -1;
     animation: float 20s infinite alternate;
+    pointer-events: none;
+}
+
+@media (max-width: 768px) {
+    .bg-orb {
+        width: 300px;
+        height: 300px;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%);
+        animation: float-mobile 10s infinite alternate;
+    }
+}
+
+@keyframes float-mobile {
+    0% { transform: translate(-50%, -50%) scale(1); }
+    100% { transform: translate(-50%, -50%) scale(1.2); }
 }
 
 @keyframes float {
@@ -126,6 +143,13 @@ main {
     gap: 1.5rem;
 }
 
+/* Utility Classes for Grid */
+.col-span-1 { grid-column: span 1; }
+.col-span-2 { grid-column: span 2; }
+.col-span-3 { grid-column: span 3; }
+.col-span-4 { grid-column: span 4; }
+.row-span-2 { grid-row: span 2; }
+
 .bento-card {
     background: var(--glass);
     border: 1px solid var(--glass-border);
@@ -142,8 +166,6 @@ main {
 }
 
 .card-hero {
-    grid-column: span 3;
-    grid-row: span 2;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -163,8 +185,6 @@ main {
 }
 
 .card-skills {
-    grid-column: span 1;
-    grid-row: span 2;
     background: linear-gradient(145deg, var(--accent), #400080);
     display: flex;
     flex-direction: column;
@@ -180,16 +200,9 @@ main {
     justify-content: space-between;
 }
 
-.card-work {
-    grid-column: span 2;
-    grid-row: span 1;
-}
-
 .card-work h2 { margin-bottom: 1rem; }
 
 .card-contact {
-    grid-column: span 2;
-    grid-row: span 1;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -207,6 +220,22 @@ main {
 
 .contact-btn:hover { transform: scale(1.05); }
 
+/* Menu Toggle */
+.menu-toggle {
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+    cursor: pointer;
+    z-index: 101;
+}
+
+.menu-toggle span {
+    width: 30px;
+    height: 2px;
+    background: var(--text-main);
+    transition: 0.3s;
+}
+
 /* Animación de entrada */
 .reveal {
     opacity: 0;
@@ -219,14 +248,73 @@ main {
     transform: translateY(0);
 }
 
+/* Responsividad */
 @media (max-width: 1024px) {
-    main { grid-template-columns: repeat(2, 1fr); }
-    .card-hero { grid-column: span 2; }
+    main { 
+        grid-template-columns: repeat(2, 1fr); 
+        margin-top: 120px;
+    }
+    .col-span-3, .col-span-4 { grid-column: span 2; }
     .card-hero h1 { font-size: 3.5rem; }
 }
 
+@media (max-width: 768px) {
+    header { padding: 1.5rem 5%; }
+    
+    .menu-toggle { display: flex; }
+    
+    .nav-links {
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 100%;
+        height: 100vh;
+        background: rgba(5, 5, 5, 0.95);
+        backdrop-filter: blur(20px);
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2rem;
+        transition: 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+
+    .nav-links.active { right: 0; }
+
+    .nav-links a { font-size: 1.5rem; }
+
+    .menu-toggle.active span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+    .menu-toggle.active span:nth-child(2) { opacity: 0; }
+    .menu-toggle.active span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+}
+
 @media (max-width: 600px) {
-    main { grid-template-columns: 1fr; }
-    .card-hero, .card-skills, .card-work, .card-contact { grid-column: span 1; }
-    .nav-links { display: none; }
+    main { 
+        grid-template-columns: 1fr; 
+        margin-top: 100px;
+        gap: 1rem;
+    }
+    .col-span-1, .col-span-2, .col-span-3, .col-span-4 { grid-column: span 1; }
+    
+    .bento-card { padding: 1.5rem; border-radius: 24px; }
+    
+    .card-hero h1 { font-size: 2.5rem; letter-spacing: -1px; }
+    .card-hero p { font-size: 1.1rem; }
+    
+    .card-skills h2 { font-size: 1.8rem; }
+}
+
+.bio-card {
+    padding: 4rem;
+}
+
+@media (max-width: 600px) {
+    .bio-card {
+        padding: 2rem 1.5rem;
+    }
+    .bio-card h2 {
+        font-size: 1.5rem !important;
+    }
+    .bio-card div p {
+        font-size: 1rem !important;
+    }
 }

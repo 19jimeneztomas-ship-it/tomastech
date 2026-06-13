@@ -18,14 +18,37 @@ window.addEventListener('scroll', revealOnScroll);
 // Initial call
 revealOnScroll();
 
+// Mobile Menu Toggle
+const menuToggle = document.getElementById('mobile-menu');
+const navLinks = document.querySelector('.nav-links');
+
+if (menuToggle) {
+    menuToggle.addEventListener('click', () => {
+        menuToggle.classList.toggle('active');
+        navLinks.classList.toggle('active');
+        document.body.style.overflow = navLinks.classList.contains('active') ? 'hidden' : 'auto';
+    });
+}
+
+// Close menu when clicking links
+document.querySelectorAll('.nav-links a').forEach(link => {
+    link.addEventListener('click', () => {
+        menuToggle.classList.remove('active');
+        navLinks.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    });
+});
+
 // Cursor effect (Optional/Subtle)
 const orb = document.querySelector('.bg-orb');
-document.addEventListener('mousemove', (e) => {
-    const x = e.clientX;
-    const y = e.clientY;
-    orb.style.left = `${x - 200}px`;
-    orb.style.top = `${y - 200}px`;
-});
+if (orb) {
+    document.addEventListener('mousemove', (e) => {
+        const x = e.clientX;
+        const y = e.clientY;
+        orb.style.left = `${x - 200}px`;
+        orb.style.top = `${y - 200}px`;
+    });
+}
 
 // Smooth Scroll con efecto de resaltado
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
