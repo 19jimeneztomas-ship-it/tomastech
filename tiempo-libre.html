@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiempo Libre | Mi Inicio</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .hobby-card {
+            transition: transform 0.3s ease, border-color 0.3s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+        .hobby-card:hover {
+            transform: translateY(-10px);
+            border-color: #ff4757;
+        }
+        .status-tag {
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            color: var(--accent-light);
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-mesh"></div>
+    <div class="bg-orb"></div>
+
+    <header>
+        <nav>
+            <div class="logo">TIEMPO LIBRE</div>
+            <ul class="nav-links">
+                <li><a href="proyectos.html">Volver a Proyectos</a></li>
+                <li><a href="index.html">Inicio</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="bento-card card-hero reveal" style="grid-column: span 4; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <h1>MI TIEMPO LIBRE</h1>
+            <p style="text-align: center; max-width: 800px; margin: 0 auto;">Aquí comparto mis ediciones de video, pasatiempos y creaciones personales.</p>
+        </div>
+
+        <!-- Sección EDITS -->
+        <a href="tiempo-libre-edits.html" class="bento-card reveal hobby-card" style="grid-column: span 2; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px;">
+            <i class="fas fa-video" style="font-size: 2.5rem; color: #ff4757; margin-bottom: 1rem;"></i>
+            <h2 style="letter-spacing: 2px;">EDITS</h2>
+            <p style="color: var(--text-dim); font-size: 0.9rem;">Lo que edito por pura pasión</p>
+        </a>
+
+        <!-- Sección PROGRAMACIÓN -->
+        <a href="tiempo-libre-programacion.html" class="bento-card reveal hobby-card" style="grid-column: span 2; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px;">
+            <i class="fas fa-code" style="font-size: 2.5rem; color: var(--accent-light); margin-bottom: 1rem;"></i>
+            <h2 style="letter-spacing: 2px;">PROGRAMACIÓN</h2>
+            <p style="color: var(--text-dim); font-size: 0.9rem;">Mis proyectos personales y experimentos</p>
+        </a>
+
+        <!-- Sección COMMUNITY MANAGER -->
+        <div class="bento-card reveal" style="grid-column: span 4; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 150px; background: rgba(255,255,255,0.01);">
+            <i class="fas fa-users" style="font-size: 2.5rem; color: #2ecc71; margin-bottom: 1rem;"></i>
+            <h2 style="letter-spacing: 2px; opacity: 0.8;">COMMUNITY MANAGER</h2>
+            <p class="status-tag">PRÓXIMAMENTE</p>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
