@@ -2,58 +2,568 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Inicio</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Quizizz PREMIUM - Advanced Control</title>
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800;900&display=swap');
+        
+        :root {
+            --primary: #8854c0; --primary-dark: #6a3da1; --secondary: #2d033b; --bg: #11001c;
+            --correct: #00c985; --wrong: #ff3355; --accent: #f2ae1c; --sabotage: #00d2ff;
+            --glass: rgba(255, 255, 255, 0.05); --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * { 
+            box-sizing: border-box; 
+            font-family: 'Outfit', sans-serif; 
+            -webkit-tap-highlight-color: transparent; 
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        body { 
+            margin: 0; padding: 0; background: var(--bg); 
+            display: flex; justify-content: center; align-items: center; 
+            min-height: 100vh; overflow: hidden;
+            background-image: radial-gradient(circle at 50% 50%, #240046 0%, #11001c 100%);
+        }
+
+        /* --- CAPA DE PARTÍCULAS --- */
+        .bg-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; pointer-events: none; }
+        .particle { position: absolute; background: rgba(136, 84, 192, 0.2); border-radius: 50%; filter: blur(2px); animation: float 20s infinite linear; }
+        @keyframes float { 
+            0% { transform: translateY(110vh) translateX(0) scale(1); opacity: 0; }
+            20% { opacity: 0.5; }
+            80% { opacity: 0.5; }
+            100% { transform: translateY(-10vh) translateX(100px) scale(1.5); opacity: 0; }
+        }
+
+        #app-container { 
+            width: 100%; height: 100vh; max-width: 500px; 
+            background: var(--glass); 
+            backdrop-filter: blur(25px);
+            position: relative; display: flex; flex-direction: column; 
+            box-shadow: 0 0 100px rgba(0,0,0,0.8); 
+            border: 1px solid var(--glass-border);
+            transition: max-width 0.5s ease;
+        }
+
+        .screen { display: none; flex-direction: column; width: 100%; height: 100%; padding: 25px; overflow-y: auto; opacity: 0; transform: translateY(20px); transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1); }
+        .screen.active { display: flex; opacity: 1; transform: translateY(0); }
+
+        .logo { font-size: 3.5rem; font-weight: 900; color: white; text-align: center; margin: 30px 0; text-shadow: 0 0 30px var(--primary); letter-spacing: -3px; font-style: italic; animation: pulse 2s infinite alternate; }
+        @keyframes pulse { from { transform: scale(1); opacity: 0.8; } to { transform: scale(1.05); opacity: 1; } }
+
+        input, select { 
+            width: 100%; padding: 18px; border-radius: 20px; border: 2px solid var(--glass-border); 
+            background: rgba(0,0,0,0.3); color: white; font-size: 1.2rem; text-align: center; 
+            margin-bottom: 20px; outline: none; transition: 0.3s;
+        }
+        input:focus { border-color: var(--primary); box-shadow: 0 0 20px rgba(136, 84, 192, 0.4); }
+
+        .btn { 
+            background: var(--primary); color: white; padding: 18px; border-radius: 22px; border: none; 
+            font-size: 1.2rem; font-weight: 900; cursor: pointer; border-bottom: 6px solid var(--primary-dark); 
+            margin-bottom: 12px; width: 100%; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+        .btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+        .btn:active { transform: translateY(4px); border-bottom-width: 0; }
+        .btn.sec { background: rgba(255,255,255,0.1); border-bottom-color: rgba(0,0,0,0.2); }
+
+        .header { background: var(--primary); padding: 15px 25px; color: white; display: flex; justify-content: space-between; align-items: center; font-weight: 900; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        
+        .timer-container { width: 100%; height: 8px; background: rgba(0,0,0,0.3); position: relative; overflow: hidden; }
+        #timer-bar { height: 100%; width: 100%; background: var(--accent); transition: width 1s linear; }
+
+        .q-card { 
+            background: white; border-radius: 35px; padding: 40px 25px; 
+            text-align: center; font-size: 1.8rem; font-weight: 900; 
+            margin-top: 30px; min-height: 200px; 
+            display: flex; align-items: center; justify-content: center; 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5); color: var(--secondary);
+            animation: slideIn 0.5s ease-out;
+        }
+        @keyframes slideIn { from { transform: translateX(-50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        .options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px; flex-grow: 1; }
+        .opt { 
+            border-radius: 25px; padding: 15px; text-align: center; color: white; font-weight: 800; 
+            cursor: pointer; min-height: 100px; display: flex; align-items: center; justify-content: center; 
+            font-size: 1.1rem; border-bottom: 6px solid rgba(0,0,0,0.2);
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: fadeInScale 0.4s backwards;
+        }
+        @keyframes fadeInScale { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .opt:hover { transform: scale(1.03); filter: brightness(1.1); }
+        .opt:active { transform: scale(0.95); }
+
+        .c0 { background: #2d70ae; animation-delay: 0.1s; } 
+        .c1 { background: #2d9da6; animation-delay: 0.2s; } 
+        .c2 { background: #efa929; animation-delay: 0.3s; } 
+        .c3 { background: #d5546d; animation-delay: 0.4s; }
+
+        .tag { 
+            background: rgba(255,255,255,0.1); padding: 12px 20px; border-radius: 18px; 
+            display: flex; justify-content: space-between; margin-bottom: 10px; 
+            font-weight: 800; color: white; border: 1px solid var(--glass-border);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards;
+        }
+        @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        .overlay { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 100; display:none; flex-direction:column; justify-content:center; align-items:center; color:white; text-align:center; backdrop-filter: blur(20px); animation: overlayIn 0.3s ease-out; }
+        @keyframes overlayIn { from { background: transparent; } }
+
+        .wrong-shake { animation: shake 0.5s ease-in-out; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            50% { transform: translateX(10px); }
+            75% { transform: translateX(-10px); }
+        }
+
+        .correct-bounce { animation: bounce 0.6s ease; }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-20px);}
+            60% {transform: translateY(-10px);}
+        }
+
+        /* --- DASHBOARD LIVE ANIMADO --- */
+        .stat-row { background: rgba(255,255,255,0.08); padding: 15px; border-radius: 20px; margin: 10px 0; border: 1px solid var(--glass-border); animation: slideRight 0.5s ease-out backwards; }
+        @keyframes slideRight { from { transform: translateX(-30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        .hidden { display: none !important; }
+        #fs-toggle { position: fixed; top: 15px; right: 15px; z-index: 1000; background: rgba(255,255,255,0.1); color: white; border: none; padding: 10px 15px; border-radius: 12px; cursor: pointer; }
+        
+        .config-item { background: white; color: black; padding: 12px 18px; border-radius: 15px; margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .config-item label { font-weight: 800; font-size: 0.9rem; }
+        .config-item input, .config-item select { width: 90px; margin: 0; padding: 5px; font-size: 0.9rem; color: black; border-color: #ddd; }
+    </style>
 </head>
 <body>
-    <div class="bg-mesh"></div>
-    <div class="bg-orb"></div>
 
-    <header>
-        <nav>
-            <div class="logo">MI.INICIO</div>
-            <div class="menu-toggle" id="mobile-menu">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-            <ul class="nav-links">
-                <li><a href="#inicio">Inicio</a></li>
-                <li><a href="#proyectos">Proyectos</a></li>
-                <li><a href="#contacto">Contacto</a></li>
-            </ul>
-        </nav>
-    </header>
+    <div class="bg-layer" id="bg-layer"></div>
+    <button id="fs-toggle" onclick="toggleFS()">⛶ Fullscreen</button>
+    <button id="sound-toggle" onclick="toggleSound()" style="position: fixed; top: 15px; left: 15px; z-index: 1000; background: rgba(255,255,255,0.1); color: white; border: none; padding: 10px 15px; border-radius: 12px; cursor: pointer;">🔊 ON</button>
 
-    <main id="inicio">
-        <!-- Bento Grid Layout -->
-        <div class="bento-card card-hero col-span-3 row-span-2 reveal">
-            <h1>MI INCREÍBLE<br>INICIO</h1>
-            <p>
-PROGRAMADOR JUNIOR, EDITOR DE VIDEOS Y MUCHA VARIEDAD. TRANSFORMANDO IDEAS EN EXPERIENCIAS DIGITALES ÚNICAS DESDE MI ESPACIO PERSONAL Y COMMUNITY MANAGER.</p>
+    <div id="app-container">
+        <!-- Pantalla 1: Login -->
+        <div id="scr-login" class="screen active" style="justify-content: center;">
+            <div class="logo">Quizizz</div>
+            <input type="text" id="name-in" placeholder="¿CÓMO TE LLAMAS?">
+            <button class="btn" onclick="initApp()">CONTINUAR</button>
         </div>
 
-        <a href="sobre-mi.html" class="bento-card card-skills col-span-1 row-span-2 reveal" id="sobre-mi" style="display: flex; align-items: center; justify-content: center; min-height: 250px; text-decoration: none; color: inherit;">
-            <h2 style="font-size: 3.5rem; text-align: center;">SOBRE MÍ 😊</h2>
-        </a>
+        <!-- Pantalla 2: Lobby Selection -->
+        <div id="scr-lobby" class="screen" style="justify-content: center;">
+            <button class="btn" onclick="hostChoice()">CREAR SALA</button>
+            <div style="color:white; margin: 20px; text-align: center; font-weight: 900; opacity: 0.3;">OR</div>
+            <input type="text" id="code-in" placeholder="CÓDIGO SALA">
+            <button class="btn sec" onclick="join()">UNIRSE A SALA</button>
+        </div>
 
-        <a href="proyectos.html" class="bento-card card-work col-span-2 reveal" id="proyectos" style="text-decoration: none; color: inherit; display: block; transition: transform 0.3s, border-color 0.3s;">
-            <h2>PROYECTOS</h2>
-            <p style="color: var(--text-dim); margin-top: 1rem;">Explora mis creaciones profesionales y personales.</p>
-        </a>
+        <!-- Pantalla 3: Host Role Choice -->
+        <div id="scr-host-choice" class="screen" style="justify-content: center;">
+            <h2 style="color: white; text-align: center; margin-bottom: 30px;">ELIGE TU ROL</h2>
+            <button class="btn" onclick="initHost(true)">🎮 JUGAR CON ELLOS</button>
+            <button class="btn sec" onclick="initHost(false)">📊 VER ESTADÍSTICAS</button>
+            <button class="btn sec" style="margin-top: 20px;" onclick="sw('scr-lobby')">CANCELAR</button>
+        </div>
 
-        <a href="contacto.html" class="bento-card card-contact col-span-2 reveal" id="contacto" style="text-decoration: none; color: inherit; display: flex; align-items: center; justify-content: space-between; transition: transform 0.3s, border-color 0.3s;">
-            <div>
-                <h2>CONTÁCTAME</h2>
-                <p style="color: var(--text-dim); margin-top: 0.5rem;">¿Listo para trabajar juntos o ver mis redes?</p>
+        <!-- Pantalla 4: Sala de Espera -->
+        <div id="scr-wait" class="screen" style="text-align: center;">
+            <h2 id="room-id" style="font-size: 3.5rem; color: white; margin: 0; text-shadow: 0 0 20px var(--primary);">----</h2>
+            <div id="conn-status" style="color: var(--accent); font-weight: 900; margin-bottom: 25px;">SALA ABIERTA</div>
+            
+            <div style="background: rgba(255,255,255,0.05); border-radius: 25px; padding: 20px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px;">
+                <p style="font-weight: 900; color: #888; text-transform: uppercase; margin-bottom: 15px; font-size: 0.7rem;">JUGADORES CONECTADOS</p>
+                <div id="p-list"></div>
             </div>
-        </a>
-    </main>
 
-    <script src="script.js"></script>
+            <div id="host-panel" class="hidden">
+                <div class="config-item">
+                    <label>PREGUNTAS:</label>
+                    <input type="number" id="q-limit" value="10" min="1" max="30">
+                </div>
+                <div class="config-item">
+                    <label>DIFICULTAD:</label>
+                    <select id="q-diff">
+                        <option value="easy">FÁCIL</option>
+                        <option value="normal" selected>NORMAL</option>
+                        <option value="hard">DIFÍCIL</option>
+                    </select>
+                </div>
+                <div class="config-item" style="flex-direction: column; align-items: stretch;">
+                    <label style="margin-bottom: 8px;">BUSCAR TEMA:</label>
+                    <input type="text" id="topic-search" placeholder="Ej: Historia, Cine, Deportes..." oninput="filterTopics()" style="margin-bottom: 5px; text-align: left; padding: 12px;">
+                    <div id="topic-results" style="max-height: 120px; overflow-y: auto; background: white; border-radius: 12px; display: none; border: 2px solid var(--primary);"></div>
+                </div>
+                <div id="selected-topic-pill" class="hidden" style="background: var(--accent); color: var(--secondary); padding: 10px; border-radius: 15px; font-weight: 900; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;">
+                    <span id="selected-topic-name">TEMA: NINGUNO</span>
+                    <span onclick="resetTopic()" style="cursor:pointer; background:rgba(0,0,0,0.1); padding: 2px 8px; border-radius: 5px;">✕</span>
+                </div>
+                <button id="btn-launch" class="btn hidden" style="margin-top: 10px;" onclick="launch()">🚀 EMPEZAR JUEGO</button>
+            </div>
+            <p id="guest-msg" style="color: white; font-size: 1.2rem; font-weight: 900;">Esperando al jefe...</p>
+        </div>
+
+        <!-- Pantalla 5: Juego -->
+        <div id="scr-quiz" class="screen" style="padding: 0;">
+            <div class="header">
+                <span id="label-q">1/10</span>
+                <span id="label-s" style="font-size: 1.8rem; color: var(--accent);">0000</span>
+                <span id="label-st">🔥 0</span>
+            </div>
+            <div class="timer-container"><div id="timer-bar"></div></div>
+            <div id="game-zone" style="padding: 25px; flex-grow: 1; display: flex; flex-direction: column;">
+                <div class="q-card" id="q-text">Cargando...</div>
+                <div class="options" id="o-grid"></div>
+            </div>
+            <div id="live-ranks" style="background: white; padding: 10px; font-size: 1rem; text-align: center; font-weight: 900;">Sincronizando...</div>
+            <div id="fb-corr" class="overlay" style="background: var(--correct); display:none;"><h1>¡SÍ!</h1></div>
+            <div id="fb-wrong" class="overlay" style="background: var(--wrong); display:none;"><h1>¡ERROR!</h1><p id="fb-ans" style="font-size: 1.5rem;"></p></div>
+        </div>
+
+        <!-- Pantalla 6: Estadísticas (Host) -->
+        <div id="scr-stats" class="screen">
+            <div class="header">
+                <span>📊 DASHBOARD LIVE</span>
+                <span id="stat-total-p">JUGADORES: 0</span>
+            </div>
+            <div style="padding: 20px;" id="stats-container"></div>
+            <button class="btn sec" style="margin-top: auto;" onclick="location.reload()">FINALIZAR SESIÓN</button>
+        </div>
+
+        <!-- Pantalla 7: Resultados Finales -->
+        <div id="scr-res" class="screen" style="text-align: center;">
+            <h1 style="color:white; font-size: 3.5rem; font-weight: 900; margin-top: 40px;">PODIO FINAL</h1>
+            <div id="res-list" style="margin-top: 30px;"></div>
+            <button class="btn" style="margin-top: 50px;" onclick="location.reload()">VOLVER</button>
+        </div>
+    </div>
+
+    <script src="questions.js"></script>
+    <script>
+        // --- SISTEMA DE AUDIO PROFESIONAL ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let soundEnabled = true;
+
+        function playTone(freq, type, duration, vol) {
+            if(!soundEnabled) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        }
+
+        const sfx = {
+            click: () => playTone(600, 'sine', 0.1, 0.1),
+            correct: () => { playTone(523, 'sine', 0.1, 0.1); setTimeout(()=>playTone(659, 'sine', 0.2, 0.1), 100); },
+            wrong: () => { playTone(200, 'sawtooth', 0.3, 0.05); },
+            start: () => { playTone(440, 'square', 0.1, 0.05); setTimeout(()=>playTone(880, 'square', 0.3, 0.05), 100); }
+        };
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('sound-toggle').innerText = soundEnabled ? "🔊 ON" : "🔇 OFF";
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        // --- GENERADOR DE PARTÍCULAS ---
+        function genParticles() {
+            const bg = document.getElementById('bg-layer');
+            for(let i=0; i<15; i++) {
+                const p = document.createElement('div'); p.className = 'particle';
+                const size = Math.random() * 5 + 2;
+                p.style.width = size + 'px'; p.style.height = size + 'px';
+                p.style.left = Math.random() * 100 + 'vw';
+                p.style.animationDuration = (Math.random() * 10 + 15) + 's';
+                p.style.animationDelay = (Math.random() * 10) + 's';
+                bg.appendChild(p);
+            }
+        }
+        genParticles();
+
+        let st = { id:'', name:'', score:0, streak:0, idx:0, isHost:false, playsAsHost:true, limit:10, diff:'normal', questions:[], players:[], timer: null, timeLeft: 15, selectedTopic: null };
+        let peer = null; let conns = [];
+
+        function sw(id) { 
+            sfx.click();
+            const screens = document.querySelectorAll('.screen');
+            screens.forEach(s => { s.style.display = 'none'; s.classList.remove('active'); });
+            const target = document.getElementById(id);
+            target.style.display = 'flex';
+            setTimeout(() => target.classList.add('active'), 30);
+        }
+
+        // --- LÓGICA DE BÚSQUEDA DE TEMAS ---
+        function filterTopics() {
+            const input = document.getElementById('topic-search').value.toUpperCase();
+            const results = document.getElementById('topic-results');
+            if(!input) { results.style.display = 'none'; return; }
+            
+            const matches = Object.keys(QUESTIONS).filter(t => t.includes(input));
+            if(matches.length > 0) {
+                results.style.display = 'block';
+                results.innerHTML = matches.map(m => `<div onclick="selectTopic('${m}')" style="padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; color: black; font-weight: 800;">🔍 ${m}</div>`).join("");
+            } else {
+                results.innerHTML = `<div style="padding: 12px; color: #888;">No se encontró ese tema...</div>`;
+            }
+        }
+
+        function selectTopic(topic) {
+            st.selectedTopic = topic;
+            document.getElementById('topic-search').value = '';
+            document.getElementById('topic-results').style.display = 'none';
+            document.getElementById('selected-topic-pill').classList.remove('hidden');
+            document.getElementById('selected-topic-name').innerText = "TEMA: " + topic;
+            document.getElementById('btn-launch').classList.remove('hidden');
+        }
+
+        function resetTopic() {
+            st.selectedTopic = null;
+            document.getElementById('selected-topic-pill').classList.add('hidden');
+            document.getElementById('btn-launch').classList.add('hidden');
+        }
+
+        function toggleFS() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(()=>{});
+                document.getElementById('app-container').style.maxWidth = '100%';
+            } else {
+                document.exitFullscreen();
+                document.getElementById('app-container').style.maxWidth = '500px';
+            }
+        }
+
+        function initApp() {
+            st.name = document.getElementById('name-in').value.trim();
+            if(!st.name) return alert("Pon tu nombre");
+            sw('scr-lobby');
+        }
+
+        function hostChoice() { sw('scr-host-choice'); }
+
+        function initHost(plays) {
+            st.playsAsHost = plays;
+            const code = Math.floor(1000 + Math.random() * 8999).toString();
+            peer = new Peer('QZ-PRM-' + code);
+            peer.on('open', id => {
+                st.isHost = true; st.id = id;
+                document.getElementById('room-id').innerText = code;
+                document.getElementById('host-panel').classList.remove('hidden');
+                document.getElementById('guest-msg').classList.add('hidden');
+                st.players = st.playsAsHost ? [{ id: id, name: st.name + " (H)", score: 0, idx: 0, host: true }] : [];
+                updatePlayersUI(); sw('scr-wait');
+            });
+            peer.on('connection', c => {
+                c.on('open', () => { conns.push(c); c.send({ type: 'SYNC_LOBBY', players: st.players }); });
+                c.on('data', d => handle(d, c));
+            });
+        }
+
+        function join() {
+            const code = document.getElementById('code-in').value.trim();
+            peer = new Peer();
+            peer.on('open', id => {
+                st.id = id;
+                const c = peer.connect('QZ-PRM-' + code);
+                c.on('open', () => {
+                    conns = [c]; c.send({ type: 'JOIN_REQ', name: st.name });
+                    document.getElementById('room-id').innerText = code; sw('scr-wait');
+                });
+                c.on('data', d => handle(d));
+            });
+        }
+
+        function handle(d, c) {
+            if(d.type === 'JOIN_REQ' && st.isHost) {
+                if(!st.players.find(p=>p.id === c.peer)) st.players.push({ id: c.peer, name: d.name, score: 0, idx: 0 });
+                broadcast({ type: 'SYNC_LOBBY', players: st.players }); updatePlayersUI();
+            }
+            if(d.type === 'SYNC_LOBBY') { st.players = d.players; updatePlayersUI(); }
+            if(d.type === 'GAME_START') {
+                st.questions = d.questions; st.limit = d.limit;
+                st.idx = 0; st.score = 0; st.streak = 0;
+                if(st.isHost && !st.playsAsHost) sw('scr-stats');
+                else { sw('scr-quiz'); renderQ(); }
+            }
+            if(d.type === 'SCORE_SYNC' && st.isHost) {
+                const p = st.players.find(x => x.id === d.id);
+                if(p) { p.score = d.score; p.idx = d.idx; }
+                broadcast({ type: 'RANK_UPDATE', players: st.players });
+                if(!st.playsAsHost) updateStatsDashboard();
+                checkFinish();
+            }
+            if(d.type === 'RANK_UPDATE') { st.players = d.players; updateLive(); }
+            if(d.type === 'FINAL_RES') { showPodium(d.final); }
+        }
+
+        // --- SISTEMA ANTI-REPETICIÓN ---
+        function getUnseenQuestions(topic, diff, limit) {
+            const seen = JSON.parse(localStorage.getItem('qz_seen_ids') || '[]');
+            const pool = QUESTIONS[topic][diff];
+            let available = pool.filter(q => !seen.includes(q.id));
+            
+            if(available.length < limit) {
+                const newSeen = seen.filter(id => !pool.map(p=>p.id).includes(id));
+                localStorage.setItem('qz_seen_ids', JSON.stringify(newSeen));
+                available = pool;
+            }
+            
+            return available.sort(() => Math.random() - 0.5).slice(0, limit);
+        }
+
+        function launch() {
+            if(!st.selectedTopic) return alert("Selecciona un tema primero");
+            sfx.start();
+            const limit = parseInt(document.getElementById('q-limit').value) || 10;
+            const diff = document.getElementById('q-diff').value;
+            const qs = getUnseenQuestions(st.selectedTopic, diff, limit);
+            
+            const seen = JSON.parse(localStorage.getItem('qz_seen_ids') || '[]');
+            qs.forEach(q => seen.push(q.id));
+            localStorage.setItem('qz_seen_ids', JSON.stringify(seen));
+
+            broadcast({ type: 'GAME_START', questions: qs, limit: qs.length });
+            st.questions = qs; st.limit = qs.length;
+            if(st.isHost && !st.playsAsHost) sw('scr-stats');
+            else { sw('scr-quiz'); renderQ(); }
+        }
+
+        function renderQ() {
+            if(st.idx >= st.limit) return;
+            const q = st.questions[st.idx];
+            document.getElementById('label-q').innerText = `${st.idx+1}/${st.limit}`;
+            document.getElementById('label-s').innerText = st.score.toString().padStart(4,'0');
+            document.getElementById('label-st').innerText = `🔥 ${st.streak}`;
+            const qText = document.getElementById('q-text');
+            qText.innerText = q.q;
+            qText.style.animation = 'none'; void qText.offsetWidth; qText.style.animation = 'slideIn 0.5s ease-out';
+
+            const box = document.getElementById('o-grid'); box.innerHTML = '';
+            q.o.forEach((o, i) => {
+                const d = document.createElement('div'); d.className = `opt c${i}`;
+                d.innerText = o; d.onclick = () => val(i, d); box.appendChild(d);
+            });
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(st.timer); st.timeLeft = 15;
+            const bar = document.getElementById('timer-bar'); bar.style.width = '100%';
+            st.timer = setInterval(() => {
+                st.timeLeft--;
+                bar.style.width = (st.timeLeft / 15) * 100 + '%';
+                if(st.timeLeft <= 0) { clearInterval(st.timer); val(-1); }
+            }, 1000);
+        }
+
+        function val(i, el) {
+            clearInterval(st.timer);
+            const q = st.questions[st.idx];
+            const isC = i === q.a;
+            
+            if(isC) { 
+                sfx.correct();
+                st.score += 100 + (st.streak*25); st.streak++; 
+                if(el) el.classList.add('correct-bounce');
+            } else { 
+                sfx.wrong();
+                st.streak = 0; 
+                document.getElementById('fb-ans').innerText = "ERA: " + q.o[q.a]; 
+                if(el) el.classList.add('wrong-shake');
+            }
+
+            document.getElementById(isC ? 'fb-corr' : 'fb-wrong').style.display = 'flex';
+            const sync = { type: 'SCORE_SYNC', id: st.id, score: st.score, idx: st.idx + 1 };
+            st.isHost ? handle(sync) : conns[0].send(sync);
+
+            setTimeout(() => {
+                document.querySelectorAll('.overlay').forEach(o=>o.style.display='none');
+                st.idx++;
+                if(st.idx >= st.limit) {
+                    document.getElementById('q-text').innerText = "¡Listo!";
+                    document.getElementById('o-grid').innerHTML = "";
+                } else renderQ();
+            }, 1500);
+        }
+
+        function updatePlayersUI() {
+            document.getElementById('p-list').innerHTML = st.players.map(p => `<div class="tag"><span>👤 ${p.name}</span><span style="color:#00c985">OK</span></div>`).join("");
+        }
+
+        function updateLive() {
+            const top = [...st.players].sort((a,b)=>b.score-a.score).slice(0, 3);
+            document.getElementById('live-ranks').innerText = top.map((p,i)=>`#${i+1} ${p.name}: ${p.score}`).join(" | ");
+        }
+
+        function updateStatsDashboard() {
+            const container = document.getElementById('stats-container');
+            document.getElementById('stat-total-p').innerText = `JUGADORES: ${st.players.length}`;
+            container.innerHTML = st.players.sort((a,b)=>b.score - a.score).map(p => `
+                <div class="stat-row">
+                    <div class="stat-header"><span>${p.name}</span><span>${p.score} pts</span></div>
+                    <div class="stat-progress-bg"><div class="stat-progress-fill" style="width: ${(p.idx/st.limit)*100}%"></div></div>
+                </div>
+            `).join("");
+        }
+
+        function checkFinish() {
+            if(st.players.every(p=>p.idx >= st.limit)) {
+                const f = [...st.players].sort((a,b)=>b.score-a.score);
+                broadcast({ type: 'FINAL_RES', final: f }); showPodium(f);
+            }
+        }
+
+        function showPodium(f) {
+            sw('scr-res');
+            document.getElementById('res-list').innerHTML = f.map((p,i)=>`
+                <div class="tag" style="background:${i==0?'#ffd700':'rgba(255,255,255,0.1)'}; color:${i==0?'#000':'white'}">
+                    <span>#${i+1} ${p.name}</span><span>${p.score} pts</span>
+                </div>
+            `).join("");
+        }
+
+        function broadcast(m) { conns.forEach(c => c.send(m)); }
+    </script>
+    <script>
+        // --- BLINDAJE ANTIRROBO AGRESIVO ---
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('dragstart', e => e.preventDefault());
+        
+        setInterval(function() {
+            (function() {
+                (function a() {
+                    try {
+                        (function b(i) {
+                            if (("" + i / i).length !== 1 || i % 20 === 0) {
+                                (function() {}).constructor("debugger")();
+                            } else {
+                                debugger;
+                            }
+                            b(++i);
+                        })(0);
+                    } catch (e) {
+                        setTimeout(a, 50);
+                    }
+                })();
+            })();
+        }, 200);
+
+        document.addEventListener('keydown', (e) => {
+            if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) || (e.ctrlKey && e.keyCode === 85)) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    </script>
 </body>
 </html>
